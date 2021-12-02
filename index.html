@@ -147,6 +147,7 @@
             let matchNumberCnt = 0; // 숫자 체크
             let matchIdxNumberCnt = 0; // 숫자, 인덱스 체크
 
+            // 번호 순서
             const order = {
                 FIRST: 0,
                 SECOND: 1,
@@ -154,6 +155,7 @@
                 FOURTH: 3,
             };
 
+            // 게임 진행 상태
             const gameState = {
                 STRIKE: 0,
                 BALL: 0,
@@ -164,6 +166,7 @@
             let swingNumber = [];
             let tableInfo = [];
 
+            //랜덤 4자리 숫자 GET
             function getGoalNumber() {
                 const MIN = 1000;
                 const MAX = 10000;
@@ -292,7 +295,7 @@
                 ) {
                     alert("숫자를 모두 입력해주세요.");
                     return;
-                } else if ([...new Set(swingNumber)].length < 4) {
+                } else if ([...new Set(swingNumber)].length !== 4) {
                     alert("중복된 숫자는 입력 할 수 없습니다.");
                     return;
                 } else if (gameCoin < 1) {
@@ -316,6 +319,7 @@
                 paintState();
                 td.forEach((td) => (td.innerText = ""));
                 numInputs.forEach((input) => (input.value = ""));
+                tableInfo = [];
                 goalNumber = getGoalNumber();
             }
 
