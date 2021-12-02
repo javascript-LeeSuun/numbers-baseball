@@ -69,26 +69,24 @@ const stateHomerun = document.getElementById("stateHomerun");
 
 const td = document.querySelectorAll(".status__table tbody tr td:nth-child(2)");
 
-let goalNumber = getGoalNumber();
-let gameCoin = 10; // 게임 코인
-let matchNumberCnt = 0; // 숫자 체크
-let matchIdxNumberCnt = 0; // 숫자, 인덱스 체크
+const COIN = 10; // 코인 개수
 
-// 번호 순서
 const order = {
     FIRST: 0,
     SECOND: 1,
     THIRD: 2,
     FOURTH: 3,
-};
+}; // 번호 순서
 
-// 게임 진행 상태
 const gameState = {
     STRIKE: 0,
     BALL: 0,
     OUT: 0,
     HOMERUN: 0,
-};
+}; // 게임 진행 상태
+
+let goalNumber = getGoalNumber();
+let gameCoin = COIN; // 게임 코인
 
 let swingNumber = [];
 let tableInfo = [];
@@ -108,47 +106,40 @@ function getGoalNumber() {
     return number;
 }
 
+function createPaintBall(gameState, stateText) {
+    const stateAry = [];
+    for (let i = 0; i < gameState; i++) {
+        const div = document.createElement("div");
+        if (stateText === "homerun") {
+            div.classList.add(stateText, "create", "victory");
+            div.innerText = "승리!!";
+        } else {
+            div.classList.add(stateText, "create");
+        }
+
+        stateAry.push(div);
+    }
+    return stateAry;
+}
+
 function paintState() {
     const game__state = document.querySelector(".game__state");
     const create = game__state.querySelectorAll(".create");
 
-    const strike = [];
-    const ball = [];
-    const out = [];
-    const homerun = [];
-
     if (gameState.OUT > 2) {
-        alert("삼진 아웃!!");
+        alert(`삼진 아웃!! 정답은${goalNumber}`);
         return;
     }
-
     // 생성된 카운트볼 초기화
     if (create.length > 0) {
         create.forEach((create) => create.remove());
     }
 
     // 카운트 볼 생성
-    for (let i = 0; i < gameState.STRIKE; i++) {
-        const div = document.createElement("div");
-        div.classList.add("strike", "create");
-        strike.push(div);
-    }
-    for (let i = 0; i < gameState.BALL; i++) {
-        const div = document.createElement("div");
-        div.classList.add("ball", "create");
-        ball.push(div);
-    }
-    for (let i = 0; i < gameState.OUT; i++) {
-        const div = document.createElement("div");
-        div.classList.add("out", "create");
-        out.push(div);
-    }
-    for (let i = 0; i < gameState.HOMERUN; i++) {
-        const div = document.createElement("div");
-        div.innerText = "Victory";
-        div.classList.add("home-run", "create", "victory");
-        homerun.push(div);
-    }
+    const strike = createPaintBall(gameState.STRIKE, "strike");
+    const ball = createPaintBall(gameState.BALL, "ball");
+    const out = createPaintBall(gameState.OUT, "out");
+    const homerun = createPaintBall(gameState.HOMERUN, "homerun");
 
     if (homerun.length < 1) {
         strike.forEach((strike) => stateStrike.appendChild(strike));
@@ -167,34 +158,29 @@ function paintTable() {
         ].innerText = `스윙: [${tableInfo[i].swingNumber}], 현황: [${tableInfo[i].strike}]S [${tableInfo[i].ball}]B [${tableInfo[i].out}]O [${tableInfo[i].homerun}]H`;
     }
 }
-
 function handleGame(swingNumber) {
-    matchNumberCnt = 0;
-    matchIdxNumberCnt = 0;
+    gameState.STRIKE = 0;
+    gameState.BALL = 0;
     gameCoin--;
-
     goalNumber.forEach(function numberCheck(number) {
         if (swingNumber.includes(number)) {
             if (goalNumber.indexOf(number) === swingNumber.indexOf(number)) {
-                matchIdxNumberCnt++;
+                gameState.STRIKE++;
                 return;
             }
-            matchNumberCnt++;
+            gameState.BALL++;
         }
     });
 
-    gameState.STRIKE = matchIdxNumberCnt;
-    gameState.BALL = matchNumberCnt;
-
-    if (matchNumberCnt < 1 && matchIdxNumberCnt < 1) {
+    if (gameState.BALL < 1 && gameState.STRIKE < 1) {
         gameState.OUT++;
     }
-    if (matchIdxNumberCnt > 3) {
+    if (gameState.STRIKE > 3) {
         gameState.HOMERUN++;
+        inputForm.removeEventListener("submit", handleNumberSubmit);
     }
 
     //테이블 정보 삽입
-
     const tableInfoObj = {
         swingNumber: swingNumber.toString(),
         strike: gameState.STRIKE,
@@ -210,8 +196,7 @@ function handleGame(swingNumber) {
     paintTable();
 }
 
-function handleNumberSubmit(event) {
-    event.preventDefault();
+function inputCheck() {
     if (
         swingNumber.length < 4 ||
         swingNumber.includes(undefined) ||
@@ -219,21 +204,26 @@ function handleNumberSubmit(event) {
     ) {
         alert("숫자를 모두 입력해주세요.");
         return;
-    } else if ([...new Set(swingNumber)].length < 4) {
+    } else if ([...new Set(swingNumber)].length !== 4) {
         alert("중복된 숫자는 입력 할 수 없습니다.");
         return;
     } else if (gameCoin < 1) {
-        alert("You Lose..!");
+        alert(`코인 모두 소모!! 정답은${goalNumber}`);
         return;
     }
+    return true;
+}
+
+function handleNumberSubmit(event) {
+    event.preventDefault();
+    if (!inputCheck()) return;
     numInputs.forEach((input) => (input.value = ""));
     handleGame(swingNumber);
 }
 
 function handleGameReset() {
-    gameCoin = 10;
-    matchNumberCnt = 0;
-    matchIdxNumberCnt = 0;
+    gameCoin = COIN;
+
     gameState.STRIKE = 0;
     gameState.BALL = 0;
     gameState.OUT = 0;
@@ -243,6 +233,7 @@ function handleGameReset() {
     paintState();
     td.forEach((td) => (td.innerText = ""));
     numInputs.forEach((input) => (input.value = ""));
+    tableInfo = [];
     goalNumber = getGoalNumber();
 }
 
@@ -272,6 +263,7 @@ function handleInputNumber(event) {
             break;
         }
     }
+    console.log(goalNumber);
 }
 
 inputForm.addEventListener("submit", handleNumberSubmit);
